@@ -19,12 +19,12 @@ public:
     }
 
     inline static void ref (void* ptr) {
-        MemObjNode* p = (MemObjNode*) ptr;
+        MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(void*) - sizeof(unsigned int));
         ++(p->count);
     }
 
     inline static void unref (void* ptr) {
-        MemObjNode* p = (MemObjNode*) ptr;
+        MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(void*) - sizeof(unsigned int));
         --(p->count);
         if (p->count == 0) {
             free(p);
@@ -44,8 +44,9 @@ public:
         return &instance;
     }
 
-    inline static void push_stack(void* ptr) {
+    inline static int push_stack(void* ptr) {
         getInstance()->stack.push_back(ptr);
+        return getInstance()->stack.size()-1;
     }
 
 protected:
