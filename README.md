@@ -22,7 +22,7 @@ struct node_meta {
     void* prev;
     void* next;
     size_t ref;
-}
+};
 
 ```
 
