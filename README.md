@@ -14,3 +14,14 @@ The fundamental of this smart pointer is the reference count, but we store the r
 ![pointer](asserts/ptr.png)
 
 We have a global singleton manager to alloc memory. When the smart pointer were constructed on the stack, it would register the pointer to the manager.
+
+```c
+
+struct node_meta {
+    size_t size;
+    void* prev;
+    void* next;
+    size_t ref;
+}
+
+```
