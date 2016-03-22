@@ -5,8 +5,8 @@
 #include "memheap.hpp"
 
 void* operator new (size_t size, MemHeap* ptr) {
-    ptr = MemHeap::getInstance();
-    return ptr->alloc(size);
+    static MemHeap* p = MemHeap::getInstance();
+    return p->alloc(size);
 }
 
 

@@ -25,3 +25,8 @@ struct node_meta {
 }
 
 ```
+
+
+The meta is used to scan the pointer in its data, so we have to know the size about the memory. The next and prev pointers constitute a double linked list which can know the memories it alloced.
+
+Besides the metadata, other parts will be regraded as an array full of pointers. We should test all the pointers in it and find the right pointer we alloced.
