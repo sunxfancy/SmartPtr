@@ -22,17 +22,18 @@ public:
     }
 
     inline static void ref (void* ptr) {
-        printf("ref\n");
+        printf("ref %p\n", ptr);
         MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
         ++(p->count);
     }
 
     inline static void unref (void* ptr) {
-        printf("unref\n");
+        printf("unref %p\n", ptr);
         MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
         --(p->count);
         if (p->count == 0) {
             free(p);
+            printf("free %p\n", p);
         }
     }
 
@@ -43,7 +44,7 @@ public:
         p->prev = NULL;
         p->next = NULL;
         p->count = 1;
-        printf("ref\n");
+        printf("ref %p\n", &(p->data));
         return &(p->data);
     }
 

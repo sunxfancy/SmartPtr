@@ -24,15 +24,20 @@ class sptr {
 public:
     sptr() {
         ptr = NULL;
+        printf("sptr\n");
     }
 
     sptr(T* p) {
         ptr = p;
+        printf("sptr T*\n");
+
     }
 
     sptr(const sptr<T>& p) {
         ptr = p.ptr;
         ref();
+        printf("sptr const&\n");
+
     }
 
     sptr<T>& operator=(T* p) {
@@ -46,7 +51,7 @@ public:
         return *this;
     }
 
-    virtual ~sptr() {
+    ~sptr() {
         unref();
     }
 
@@ -92,8 +97,8 @@ public:
     sptr_stack(const sptr<T>& p) : sptr<T>(p) {
     }
 
-    virtual ~sptr_stack() {
-        ~sptr<T>();
+    ~sptr_stack() {
+        sptr<T>::unref();
     }
 };
 
