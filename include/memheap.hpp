@@ -3,14 +3,15 @@
 
 #include <cstdlib>
 #include <deque>
+#include <cstdio>
 
 class MemHeap {
 
     // 内部使用的节点类型
     struct MemObjNode {
         size_t size;
-        void* prev;
-        void* next;
+        MemObjNode* prev;
+        MemObjNode* next;
         size_t count;
         void* data[];
     };
@@ -21,11 +22,13 @@ public:
     }
 
     inline static void ref (void* ptr) {
+        printf("ref\n");
         MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
         ++(p->count);
     }
 
     inline static void unref (void* ptr) {
+        printf("unref\n");
         MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
         --(p->count);
         if (p->count == 0) {
@@ -33,11 +36,23 @@ public:
         }
     }
 
-    inline void* alloc(size_t size) {
+    void* allocate(size_t size) {
         MemObjNode* p = (MemObjNode*) malloc(size + sizeof(MemObjNode));
+        if (p == NULL) return NULL;
+        p->size = size;
+        p->prev = NULL;
         p->next = NULL;
         p->count = 1;
+        printf("ref\n");
         return &(p->data);
+    }
+
+    void release(void* ptr) {
+        if (ptr == NULL) return;
+        MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
+        if (p->prev) p->prev->next = p->next;
+        if (p->next) p->next->prev = p->prev;
+        free(ptr);
     }
 
     inline static MemHeap* getInstance() {

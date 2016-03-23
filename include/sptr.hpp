@@ -1,13 +1,12 @@
 #ifndef SPTR_HPP
 #define SPTR_HPP
 
-#include <cstdio>
 #include "memheap.hpp"
 
 void* operator new (size_t size, MemHeap* ptr) {
-    if (ptr) return ptr->alloc(size);
+    if (ptr) return ptr->allocate(size);
     static MemHeap* p = MemHeap::getInstance();
-    return p->alloc(size);
+    return p->allocate(size);
 }
 
 
@@ -24,9 +23,7 @@ template<typename T>
 class sptr {
 public:
     sptr() {
-    }
-
-    sptr(bool b) {
+        ptr = NULL;
     }
 
     sptr(T* p) {
@@ -49,7 +46,7 @@ public:
         return *this;
     }
 
-    ~sptr() {
+    virtual ~sptr() {
         unref();
     }
 
@@ -74,15 +71,30 @@ public:
 
 protected:
     inline void ref() {
-        printf("ref\n");
-        MemHeap::ref(ptr);
+        if (ptr) MemHeap::ref(ptr);
     }
     inline void unref() {
-        printf("unref\n");
-        MemHeap::unref(ptr);
+        if (ptr) MemHeap::unref(ptr);
     }
 
     T* ptr;
+};
+
+template<typename T>
+class sptr_stack : public sptr<T> {
+public:
+    sptr_stack() : sptr<T>() {
+    }
+
+    sptr_stack(T* p) : sptr<T>(p)  {
+    }
+
+    sptr_stack(const sptr<T>& p) : sptr<T>(p) {
+    }
+
+    virtual ~sptr_stack() {
+        ~sptr<T>();
+    }
 };
 
 

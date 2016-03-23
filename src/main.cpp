@@ -5,10 +5,15 @@ public:
     sptr<Test> next;
 };
 
+int test() {
+    sptr_stack<Test> p = new (MemHeap::getInstance()) Test();
+    return 0;
+}
 
 
 int main(int argc, char const *argv[]) {
-    sptr<Test> p = new (MemHeap::getInstance()) Test();
+    test();
+    sptr_stack<Test> p = new (MemHeap::getInstance()) Test();
     p->next = p;
     return 0;
 }
