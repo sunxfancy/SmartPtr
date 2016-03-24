@@ -2,17 +2,17 @@
 #define MEM_HEAP_HPP
 
 #include <cstdlib>
-#include <deque>
+#include <unordered_set>
 #include <cstdio>
+
+using namespace std;
 
 class MemHeap {
 
     // 内部使用的节点类型
     struct MemObjNode {
         size_t size;
-        MemObjNode* prev;
-        MemObjNode* next;
-        size_t count;
+        int count;
         void* data[];
     };
 
@@ -21,19 +21,18 @@ public:
 
     }
 
-    inline static void ref (void* ptr) {
-        printf("ref %p\n", ptr);
+    static void ref (void* ptr) {
         MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
         ++(p->count);
     }
 
-    inline static void unref (void* ptr) {
-        printf("unref %p\n", ptr);
+    static void unref (void* ptr) {
         MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
         --(p->count);
         if (p->count == 0) {
             free(p);
-            printf("free %p\n", p);
+            getInstance()->all.erase(ptr);
+            getInstance()->stack.erase(ptr);
         }
     }
 
@@ -41,19 +40,17 @@ public:
         MemObjNode* p = (MemObjNode*) malloc(size + sizeof(MemObjNode));
         if (p == NULL) return NULL;
         p->size = size;
-        p->prev = NULL;
-        p->next = NULL;
         p->count = 1;
-        printf("ref %p\n", &(p->data));
+        all.insert(&(p->data));
         return &(p->data);
     }
 
     void release(void* ptr) {
         if (ptr == NULL) return;
         MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
-        if (p->prev) p->prev->next = p->next;
-        if (p->next) p->next->prev = p->prev;
-        free(ptr);
+        getInstance()->all.erase(ptr);
+        getInstance()->stack.erase(ptr);
+        free(p);
     }
 
     inline static MemHeap* getInstance() {
@@ -61,14 +58,53 @@ public:
         return &instance;
     }
 
-    inline static int push_stack(void* ptr) {
-        getInstance()->stack.push_back(ptr);
+    static int push_stack(void* ptr) {
+        getInstance()->stack.insert(ptr);
         return getInstance()->stack.size()-1;
     }
 
+    static int pop_stack(void* ptr) {
+        getInstance()->stack.erase(ptr);
+        return getInstance()->stack.size();
+    }
+
+
+    void runGC() {
+        for (void* p : stack) {
+            markChildren(p);
+        }
+        for (void* ptr : all) {
+            MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
+            if (p->count < 0) p->count = -(p->count);
+            else {
+                all.erase(p);
+                free(p);
+            }
+        }
+    }
+
 protected:
-    std::deque<void*> stack;
+
+    unordered_set<void*> stack;
+    unordered_set<void*> all;
     void* heap;
+
+    void markChildren(void* ptr) {
+        MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
+
+        // 如果打了标记则退出, 否则设置标记, 标记方式则是改变符号位
+        if (p->count < 0) return;
+        p->count = -(p->count);
+
+        size_t size = (p->size) / sizeof(char*);
+        char** end = (char**)ptr + size;
+        for (char** i = (char**)ptr; i < end; ++i) {
+            if (all.find(*i) != all.end()) {
+                markChildren(*i);
+            }
+        }
+    }
+
 };
 
 

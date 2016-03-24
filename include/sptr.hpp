@@ -24,20 +24,15 @@ class sptr {
 public:
     sptr() {
         ptr = NULL;
-        printf("sptr\n");
     }
 
     sptr(T* p) {
         ptr = p;
-        printf("sptr T*\n");
-
     }
 
     sptr(const sptr<T>& p) {
         ptr = p.ptr;
         ref();
-        printf("sptr const&\n");
-
     }
 
     sptr<T>& operator=(T* p) {
@@ -51,7 +46,7 @@ public:
         return *this;
     }
 
-    ~sptr() {
+    virtual ~sptr() {
         unref();
     }
 
@@ -89,16 +84,19 @@ template<typename T>
 class sptr_stack : public sptr<T> {
 public:
     sptr_stack() : sptr<T>() {
+        MemHeap::push_stack(this->ptr);
     }
 
     sptr_stack(T* p) : sptr<T>(p)  {
+        MemHeap::push_stack(this->ptr);
     }
 
     sptr_stack(const sptr<T>& p) : sptr<T>(p) {
+        MemHeap::push_stack(this->ptr);
     }
 
-    ~sptr_stack() {
-        sptr<T>::unref();
+    virtual ~sptr_stack() {
+        MemHeap::pop_stack(this->ptr);
     }
 };
 
