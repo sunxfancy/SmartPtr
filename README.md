@@ -17,11 +17,10 @@ We have a global singleton manager to alloc memory. When the smart pointer were 
 
 ```c
 
-struct node_meta {
+struct MemObjNode {
     size_t size;
-    void* prev;
-    void* next;
-    size_t ref;
+    int count;
+    void* data[];
 };
 
 ```
@@ -30,3 +29,43 @@ struct node_meta {
 The meta is used to scan the pointer in its data, so we have to know the size about the memory. The next and prev pointers constitute a double linked list which can know the memories it alloced.
 
 Besides the metadata, other parts will be regraded as an array full of pointers. We should test all the pointers in it and find the right pointer we alloced.
+
+
+
+Here our demo:
+
+```cpp
+
+#include "../include/sptr.hpp"
+
+class Test {
+public:
+    sptr<Test> next;
+};
+
+int test() {
+    sptr_stack<Test> p = new (MemHeap::getInstance()) Test();
+    return 0;
+}
+
+
+int main(int argc, char const *argv[]) {
+    test();
+    sptr_stack<Test> p = new (MemHeap::getInstance()) Test();
+    p->next = p;
+    p = NULL;
+    MemHeap::runGC();
+
+    return 0;
+}
+
+```
+
+After running:
+
+```
+allocate 0x1716cf0
+release 0x1716cf0
+allocate 0x1716cf0
+release 0x1716cf0
+```
