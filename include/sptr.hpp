@@ -36,11 +36,13 @@ public:
     }
 
     sptr<T>& operator=(T* p) {
+        unref();
         ptr = p;
         return *this;
     }
 
     sptr<T>& operator=(const sptr<T>& p) {
+        unref();
         ptr = p.ptr;
         ref();
         return *this;
@@ -62,10 +64,10 @@ public:
         return ptr;
     }
 
-    T* operator -> () {
+    inline T* operator -> () {
         return ptr;
     }
-    T& operator * () {
+    inline T& operator * () {
         return *ptr;
     }
 
@@ -95,8 +97,26 @@ public:
         MemHeap::push_stack(this->ptr);
     }
 
+
+    sptr<T>& operator=(T* p) {
+        pop();
+        sptr<T>::operator=(p);
+        return *this;
+    }
+
+    sptr<T>& operator=(const sptr<T>& p) {
+        pop();
+        sptr<T>::operator=(p);
+        return *this;
+    }
+
     virtual ~sptr_stack() {
-        MemHeap::pop_stack(this->ptr);
+        pop();
+    }
+
+protected:
+    inline void pop() {
+        if (this->ptr) MemHeap::pop_stack(this->ptr);
     }
 };
 

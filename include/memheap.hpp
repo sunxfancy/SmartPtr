@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <unordered_set>
 #include <cstdio>
+#include <vector>
 
 using namespace std;
 
@@ -21,19 +22,15 @@ public:
 
     }
 
-    static void ref (void* ptr) {
+    inline static void ref (void* ptr) {
         MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
         ++(p->count);
     }
 
-    static void unref (void* ptr) {
+    inline static void unref (void* ptr) {
         MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
         --(p->count);
-        if (p->count == 0) {
-            free(p);
-            getInstance()->all.erase(ptr);
-            getInstance()->stack.erase(ptr);
-        }
+        if (p->count == 0) getInstance()->release(ptr);
     }
 
     void* allocate(size_t size) {
@@ -42,15 +39,16 @@ public:
         p->size = size;
         p->count = 1;
         all.insert(&(p->data));
+        printf("allocate %p\n", &(p->data));
         return &(p->data);
     }
 
     void release(void* ptr) {
         if (ptr == NULL) return;
         MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
-        getInstance()->all.erase(ptr);
-        getInstance()->stack.erase(ptr);
+        all.erase(ptr);
         free(p);
+        printf("release %p\n", ptr);
     }
 
     inline static MemHeap* getInstance() {
@@ -58,29 +56,28 @@ public:
         return &instance;
     }
 
-    static int push_stack(void* ptr) {
+    inline static void push_stack(void* ptr) {
         getInstance()->stack.insert(ptr);
-        return getInstance()->stack.size()-1;
     }
 
-    static int pop_stack(void* ptr) {
+    inline static void pop_stack(void* ptr) {
         getInstance()->stack.erase(ptr);
-        return getInstance()->stack.size();
     }
 
 
-    void runGC() {
-        for (void* p : stack) {
-            markChildren(p);
+    static void runGC() {
+        auto inst = getInstance();
+        for (void* p : inst->stack) {
+            inst->markChildren(p);
         }
-        for (void* ptr : all) {
+
+        vector<void*> v;
+        for (void* ptr : inst->all) {
             MemObjNode* p = (MemObjNode*) ((char*) ptr - sizeof(MemObjNode));
             if (p->count < 0) p->count = -(p->count);
-            else {
-                all.erase(p);
-                free(p);
-            }
+            else v.push_back(ptr);
         }
+        for (void* p : v) inst->release(p);
     }
 
 protected:
@@ -95,6 +92,7 @@ protected:
         // 如果打了标记则退出, 否则设置标记, 标记方式则是改变符号位
         if (p->count < 0) return;
         p->count = -(p->count);
+        printf("tag %p\n", ptr);
 
         size_t size = (p->size) / sizeof(char*);
         char** end = (char**)ptr + size;
